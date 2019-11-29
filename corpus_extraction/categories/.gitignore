@@ -1,0 +1,5 @@
+# exclude everything
+categories/*
+
+# exception to the rule
+!categories/.gitkeep 
