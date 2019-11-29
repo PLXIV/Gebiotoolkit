@@ -13,8 +13,6 @@ import wikipedia
 import argparse
 import time
 
-results = []
-
 def retrieve_args():
     parser = argparse.ArgumentParser(description='Finds the different languages available for an specific wikipedia article')
     parser.add_argument('-v','--vr_number', required=False, help='virtual machine assigned. Must be lower than the total number of virtual machines', default= '1')
