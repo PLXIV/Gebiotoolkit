@@ -6,17 +6,14 @@ Created on Sun Oct  6 02:03:01 2019
 @author: plxiv
 """
 import os
-import sys
-import nltk.data
-sys.path.insert(0, '/home/plxiv/tfm/Resources_for_gender_bias_NLP/corpus_extractor/')
-os.environ['LASER'] = '/home/plxiv/LASER/LASER-master/'
-LASER = os.environ['LASER']
-
+import pickle
+import argparse
+from storage_modules import store_sentences
+from preprocess import preprocess
 from embed_extractor import extract, generate_encoder
 from parallel_extractor import mine
-from people_selection import People_selection
-from nltk.tokenize import word_tokenize
-
+os.environ['LASER'] = '/home/plxiv/LASER/LASER-master/'
+LASER = os.environ['LASER']
 
 def find_file(folder, target):
     files = os.listdir(folder)
@@ -42,32 +39,6 @@ def extract_filenames(dict_filenames, corpus_folder, person, list_languages):
                 names[lan_p[0]] = corpus_folder + lan_p[0] + '/raw/' +  fn
     return names
 
-def store_sentences(sentences, names, languages, results_folder, person):
-    for sentence in sentences:
-        gender = find_pronouns(names['en'])
-        if len(sentence) == len(languages):
-            for i in range(len(languages)):
-                with open(results_folder + 'lan_' + str(i) + '_' + gender + '.txt', 'a') as f:
-                    if '\n' in sentence[i]:
-                        f.write(person + ' : ' + sentence[i])
-                    else:
-                        f.write(person + ' : ' + sentence[i] + '\n')
-        else:
-            with open('wrong.txt', 'a') as f:
-                f.write(str(sentence))
-
-def preprocess(outputfile, filename):
-    tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-    tmp = 'preprocessed/'
-    write = open(tmp + outputfile, 'a')
-    with open(filename, 'r') as f:
-        a = f.readlines()
-    for i in range(3,len(a)-1):
-        if len(a[i]) > 15:
-            b = tokenizer.tokenize(a[i])
-            for c in b:
-                write.write(c + '\n')
-
 def remove_tmp(languages):
     for i in languages:
         try:
@@ -76,44 +47,17 @@ def remove_tmp(languages):
         except:
             pass
 
-def check_language(lan):
-    if lan == 'ar':
-        lan_fol = 'ara'
-    elif lan == 'ja':
-        lan_fol = 'jpn'
-    else:
-        lan_fol = lan
-    return lan_fol
-
-def find_pronouns(filename):
-    a = open(filename, 'r')
-    text = a.readlines()
-    text = [i for i in text if '\n' != i]
-    concat_text = ' '.join(text[1:]).lower()
-    tokens = word_tokenize(concat_text)
-    he = len(list(filter(lambda x: x=='he' , tokens)))
-    his = len(list(filter(lambda x: x=='his' , tokens)))
-    she = len(list(filter(lambda x: x=='she' , tokens)))
-    her = len(list(filter(lambda x: x=='her' , tokens)))
-    if (he + his) > (she + her):
-        gender = 'he'
-    else:
-        gender = 'she'
-    return gender
-
-def find_selected_sentences(languages, names, encoder, bpe_codes, embeds, parallel_file, threshold):
+def extract_candidate_sentences(languages, names, encoder, bpe_codes, parallel_file, threshold):
     sel_par_sentences= []
     all_embeds = []
     for lan in languages:
         preprocess(lan, names[lan])
-        lan_fol = check_language(lan)
-        all_embeds.append(extract(encoder, lan_fol, bpe_codes, 'preprocessed/' + lan, embeds + str(lan), remove= True, verbose = False))
+        all_embeds.append(extract(encoder, lan, bpe_codes, 'preprocessed/' + lan, 'embeds/' + str(lan), remove= True, verbose = False))
     for lan in languages:
-        lan_fol = check_language(lan)
         all_par_sentences = mine('preprocessed/' + languages[0], 
                                  'preprocessed/' + lan, 
-                                 languages[0], lan_fol, 
-                                 embeds + languages[0], embeds + lan, 
+                                 languages[0], lan, 
+                                 'embeds/' + languages[0], 'embeds/' + lan, 
                                  parallel_file, 'mine')
         if all_par_sentences:
             for i, par in enumerate(all_par_sentences):
@@ -132,7 +76,7 @@ def compare_sentences(lan_1, lan_2):
             update.append(lan_1[i])
     return update
 
-def extract_parrallel(sel_par_sentences):
+def find_parallel_sentences(sel_par_sentences):
     try:
         parrallel_sentences = [[i[1]] for i in sel_par_sentences[0]]
         for i in range(1,len(sel_par_sentences)):
@@ -142,30 +86,33 @@ def extract_parrallel(sel_par_sentences):
     return parrallel_sentences        
 
 def run(encoder, corpus_folder, names, languages, threshold = 1.055):
-    embeds = 'embeds/'
     bpe_codes = LASER + 'models/93langs.fcodes'  
     parallel_tmp = 'parallel.txt'
-    sel_par_sentences = find_selected_sentences(languages, names, encoder, bpe_codes, embeds, parallel_tmp, threshold)   
-    par = extract_parrallel(sel_par_sentences)
+    sel_par_sentences = extract_candidate_sentences(languages, names, encoder, bpe_codes, parallel_tmp, threshold)   
+    par = find_parallel_sentences(sel_par_sentences)
     return par
 
+def retrieve_args():
+    parser = argparse.ArgumentParser(description='Generates a pickle in which contains the dictionary of the samples in which all languages have the same entry')
+    parser.add_argument('-l','--languages', nargs='+', required=True, help='Languages in which the parallel sentences will be generated')
+    parser.add_argument('-f','--folder', required=True, help='root folder where the extracted corpus is stored')
+    parser.add_argument('-p','--pickle', required=True, help='pickle that contains the people selection')
+    parser.add_argument('-s','--save_path', required=False, help='Folder where the sentences will be stored', default='results/')
+    parser.add_argument('-e','--encoder', required=False, help='path to the LASER encoder', default='/home/plxiv/LASER/LASER-master/models/bilstm.93langs.2018-12-26.pt')
+    args = parser.parse_args()
+    return args
+
 def main():
-    corpus_folder = '/media/plxiv/AEF0C4B1F0C480D7/tmp/Resources_for_gender_bias_NLP/corpus_extractor/output/'
-    languages = ['es','ca']
-    results_folder = 'results/'
-    p_all = '/home/plxiv/tfm/Resources_for_gender_bias_NLP/corpus_extractor/p_all/'
-    encoder_file = LASER + 'models/bilstm.93langs.2018-12-26.pt'
+    args = retrieve_args()
+    corpus_folder = args.folder
+    languages = args.languages
+    results_folder = args.save_path
+    encoder_file = args.encoder
     encoder = generate_encoder(encoder_file)
-    people = People_selection(p_all, languages).selected_people
-    languages = ['en'] + languages
+    with open(args.pickle, 'rb') as f:
+        people = pickle.load(f)
     dict_filenames =  obtain_all_filenames(corpus_folder, languages)
-    counter = 18497
-    a = list(people.items())
-    print(len(a))
-    a = a[counter:]
-    for person, list_languages in a:
-        counter+=1
-        print(counter)
+    for person, list_languages in people.items():
         names = extract_filenames(dict_filenames, corpus_folder, person, list_languages)
         if len(names.keys()) == len(languages):
             sentences = run(encoder, corpus_folder, names, languages)
