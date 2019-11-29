@@ -3222,8 +3222,6 @@ def main():
         try:
             os.makedirs(output_path)
             os.mkdir(output_path + '/raw')
-            os.mkdir(output_path + '/he')
-            os.mkdir(output_path + '/she')
         except:
             logging.error('Could not create: %s', output_path)
             return
