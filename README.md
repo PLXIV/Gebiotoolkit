@@ -11,6 +11,13 @@ While our toolkit is able to customize the languages for which we are extracting
 
 ## Usage
 
+### Corpus extractor
+
+If we want to change the domain of gebiotoolkit, we need to generate new files and delete the ones from the folder dictionary_of_files. To generate new ones, we need to get a list of wikipedia entries, the easiest way to achieve this is by using the petscan tool (https://petscan.wmflabs.org/) in which allows you to perform it easily. Next we execute the following code:
+
+  python3 wp_api_language_search.py -csv new_list.csv 
+
+
 
 
 ## References
