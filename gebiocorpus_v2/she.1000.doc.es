@@ -22,7 +22,7 @@
 </doc>
 <doc docid="Catriona Gray" wpid="8411924" language="es" topic="C2" gender="Female">
 <title> Catriona Gray</title>
-<seg id="1">Además, obtuvo un Certificado en Recreación al Aire Libre y un cinturón negro en Artes Marciales de Taekwondo.<\seg>
+<seg id="1">Además, obtuvo un Certificado en Recreación al Aire Libre y un cinturón negro en Artes Marciales de Choi Kwang Do.<\seg>
 <seg id="2">Catriona Elisa Magnayon Gray (6 de enero de 1994) es una modelo y reina de belleza australiana-filipina, ganadora de Miss Universo 2018 representando a Filipinas.<\seg>
 <seg id="3">Gray nació en Cairns, Queensland de un padre australiano nacido en Escocia, Ian Gray, de y una madre filipina, Normita Ragas Magnayon, de Albay.<\seg>
 </doc>
