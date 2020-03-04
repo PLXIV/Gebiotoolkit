@@ -20,7 +20,8 @@ If we want to change the domain of gebiotoolkit, we need to generate new files a
     python3 wp_api_language_search.py -csv new_list.csv 
 
 
-
+# License
+This code and data is released under the Creative Commons Attribution-NonCommercial license 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)
 
 ## References
 
